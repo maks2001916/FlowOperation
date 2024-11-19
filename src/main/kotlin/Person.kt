@@ -1,4 +1,3 @@
 package org.example
 
-class Person {
-}
+data class Person(var name: String, var age: Int) {}
