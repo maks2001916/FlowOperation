@@ -22,13 +22,28 @@ suspend fun main() {
         Person("Степан", 27)
     ).asFlow()
 
-    persons.getPerson("А", 21)
+    val passwords = mutableListOf<String>()
+    val cards = mutableListOf<String>()
+    val personsTwo = mutableListOf<String>()
 
-    var passwords = mutableListOf<String>()
-    var cards = mutableListOf<String>()
+    for (i in 0 .. 9) {
+        passwords.add(generatePassword())
+        cards.add(generateCard())
+        personsTwo.add(persons.toList().get(i).name)
+    }
 
-    println(generatePassword())
-    println(generateCard())
+    val combinedFlow = combineFlows(
+        personsTwo.asFlow(),
+        cards.asFlow(),
+        passwords.asFlow()) { name, card, password ->
+        FullPerson(name, card, password)
+    }
+
+
+    // Подписываемся и выводим результаты
+    combinedFlow.collect { person ->
+        println(person) // Выводим объекты Person
+    }
 
 }
 
@@ -56,3 +71,17 @@ fun generateCard(): String {
     }
     return cardBuilder.toString()
 }
+
+fun <T1, T2, T3, R> combineFlows(
+    first: Flow<T1>,
+    second: Flow<T2>,
+    third: Flow<T3>,
+    combineFunction: (T1, T2, T3) -> R
+): Flow<R> {
+    return first.zip(second) { t1, t2 -> Pair(t1, t2) }
+        .zip(third) { pair, t3 ->
+            combineFunction(pair.first, pair.second, t3)
+        }
+}
+
+
